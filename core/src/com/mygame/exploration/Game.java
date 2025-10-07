@@ -13,7 +13,6 @@ import com.mygame.entity.Inventaire;
 import com.mygame.entity.Joueur;
 import com.mygame.leaderboard.Leaderboard;
 import com.mygame.leaderboard.Score;
-import com.mygame.level.CarteGenerator;
 import com.mygame.level.Niveau;
 import com.mygame.level.TextureUtils;
 import com.mygame.exception.*;
@@ -97,8 +96,6 @@ public class Game extends ApplicationAdapter {
      */
     private void initializeLevel(int pointsDeVie, int piecesOr) {
     	try {
-            CarteGenerator generator = new CarteGenerator(MAP_ROWS, MAP_COLUMNS);
-            char[][] carte = generator.getCarte();
             Texture salleTexture = new Texture(Gdx.files.internal("textures/sol.png"));
             Texture joueurTexture = TextureUtils.resizeTexture(new Texture(Gdx.files.internal("textures/player.png")), 48, 48); 
             Texture tresorTexture = new Texture("textures/tresor.png"); 
@@ -108,7 +105,7 @@ public class Game extends ApplicationAdapter {
             Texture murTexture = new Texture("textures/salle.png");
             Texture fastmonstreTexture = new Texture("textures/fastmonstre.png");
 
-            niveau = new Niveau(salleTexture, joueurTexture, tresorTexture, monstreTexture,fastmonstreTexture, porteTexture, sortieTexture, murTexture, tileWidth, tileHeight, generator.getCoffres(), carte, playerName, pointsDeVie, piecesOr);
+            niveau = new Niveau(salleTexture, joueurTexture, tresorTexture, monstreTexture,fastmonstreTexture, porteTexture, sortieTexture, murTexture, tileWidth, tileHeight, playerName, pointsDeVie, piecesOr);
         } catch (Exception e) {
             throw new ResourceLoadingException("Impossible de créer le niveau", e);
         }

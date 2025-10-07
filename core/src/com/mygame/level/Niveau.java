@@ -8,6 +8,7 @@ import com.mygame.entity.Monstre;
 import com.mygame.entity.FastMonster;
 import com.mygame.exception.LevelInitializationException;
 import com.mygame.exception.ResourceLoadingException;
+import com.mygame.level.CarteGenerator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -57,10 +58,12 @@ public class Niveau {
      * @param pointsDeVie     Les points de vie du joueur.
      * @param piecesOr        Les pièces d'or du joueur.
      */
-    public Niveau(Texture salleTexture, Texture joueurTexture, Texture tresorTexture, Texture monstreTexture, Texture fastmonstreTexture,Texture porteTexture, Texture sortieTexture, Texture murTexture, int tileWidth, int tileHeight, List<Coffre> coffres, char[][] carte, String playerName, int pointsDeVie, int piecesOr) {
+    public Niveau(Texture salleTexture, Texture joueurTexture, Texture tresorTexture, Texture monstreTexture, Texture fastmonstreTexture,Texture porteTexture, Texture sortieTexture, Texture murTexture, int tileWidth, int tileHeight, String playerName, int pointsDeVie, int piecesOr) {
         try {
-            this.coffres = coffres;
-            this.carte = carte;
+
+            CarteGenerator generator = new CarteGenerator(MAP_COLUMNS, MAP_ROWS);
+            this.coffres = generator.getCoffres();
+            this.carte =  generator.getCarte();
             this.rows = carte.length;
             this.cols = carte[0].length;
             this.salleTexture = salleTexture;
