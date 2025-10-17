@@ -17,14 +17,14 @@ import com.mygame.level.Niveau;
 import com.mygame.level.TextureUtils;
 import com.mygame.exception.*;
 
-import javax.swing.*;
 import java.util.List;
+import com.badlogic.gdx.InputProcessor;
 
 /**
  * La classe Game représente le jeu principal et gère la boucle de jeu, les rendus graphiques, les entrées utilisateur
  * et les différents niveaux.
  */
-public class Game extends ApplicationAdapter {
+public class Game extends ApplicationAdapter implements InputProcessor {
     private SpriteBatch batch;
     private Niveau niveau;
     private boolean jeuDemarre;
@@ -48,6 +48,11 @@ public class Game extends ApplicationAdapter {
     private String playerName;
     private boolean gameOver;
     private long gameOverTime;
+    
+    // Variables pour la saisie du nom
+    private boolean saisieNom;
+    private StringBuilder nomBuffer;
+    private boolean nomValide;
 
     /**
      * Méthode appelée lors de la création du jeu.
@@ -72,20 +77,17 @@ public class Game extends ApplicationAdapter {
             currentLevel = 1;
             jeuDemarre = false;
             gameOver = false;
-            playerName = demanderNomJoueur();
+            saisieNom = true;
+            nomBuffer = new StringBuilder();
+            nomValide = false;
+            playerName = "";
             leaderboard = new Leaderboard("leaderboard.txt");
+            
+            // Configurer l'InputProcessor pour la saisie de caractères
+            Gdx.input.setInputProcessor(this);
         } catch (Exception e) {
             throw new GameInitializationException("Initialisation du jeu raté", e);
         }
-    }
-
-    /**
-     * Demande le nom du joueur via une boîte de dialogue.
-     *
-     * @return Le nom du joueur saisi.
-     */
-    private String demanderNomJoueur() {
-        return JOptionPane.showInputDialog(null, "Entrez votre nom :", "Nom du joueur", JOptionPane.PLAIN_MESSAGE);
     }
 
     /**
@@ -125,7 +127,9 @@ public class Game extends ApplicationAdapter {
 
         batch.begin();
 
-        if (!jeuDemarre) {
+        if (saisieNom) {
+            afficherSaisieNom(batch);
+        } else if (!jeuDemarre) {
             afficherEcranAccueil(batch);
         } else {
             if (!gameOver) {
@@ -141,7 +145,11 @@ public class Game extends ApplicationAdapter {
                     gameOver = false;
                     currentLevel = 1;
                     jeuDemarre = false;
-                    playerName = demanderNomJoueur();
+                    saisieNom = true;
+                    nomBuffer = new StringBuilder();
+                    nomValide = false;
+                    playerName = "";
+                    Gdx.input.setInputProcessor(this); // Réactiver l'InputProcessor
                 }
             }
         }
@@ -162,6 +170,69 @@ public class Game extends ApplicationAdapter {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
             jeuDemarre = true;
             initializeLevel(170, 0); // Initialiser avec des points de vie et des pièces d'or par défaut
+        }
+    }
+
+    /**
+     * Affiche l'écran de saisie du nom du joueur.
+     *
+     * @param batch L'objet SpriteBatch utilisé pour dessiner les textures.
+     */
+    private void afficherSaisieNom(SpriteBatch batch) {
+        // Arrière-plan
+        Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1);
+        
+        // Titre
+        titleFont.setColor(Color.YELLOW);
+        titleFont.draw(batch, "CASTLE WISDOM", WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 100);
+        
+        // Instructions
+        font.setColor(Color.WHITE);
+        font.draw(batch, "Entrez votre nom :", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 50);
+        
+        // Nom saisi
+        font.setColor(Color.CYAN);
+        String nomAffiche = nomBuffer.toString();
+        if (nomAffiche.length() == 0) {
+            nomAffiche = "_";
+        } else {
+            nomAffiche = nomAffiche + "_";
+        }
+        font.draw(batch, nomAffiche, WINDOW_WIDTH / 2 - 50, WINDOW_HEIGHT / 2);
+        
+        // Instructions de validation
+        font.setColor(Color.LIGHT_GRAY);
+        font.draw(batch, "Appuyez sur ENTREE pour valider", WINDOW_WIDTH / 2 - 140, WINDOW_HEIGHT / 2 - 50);
+        font.draw(batch, "BACKSPACE pour effacer", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 - 80);
+        
+        // Gestion des entrées
+        gererSaisieNom();
+    }
+
+    /**
+     * Gère la saisie du nom du joueur.
+     */
+    private void gererSaisieNom() {
+        // Validation avec ENTER
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            if (nomBuffer.length() > 0) {
+                playerName = nomBuffer.toString().trim();
+                if (playerName.length() > 0) {
+                    saisieNom = false;
+                    nomValide = true;
+                    Gdx.input.setInputProcessor(null); // Désactiver l'InputProcessor
+                }
+            } else {
+                playerName = "Joueur";
+                saisieNom = false;
+                nomValide = true;
+                Gdx.input.setInputProcessor(null); // Désactiver l'InputProcessor
+            }
+        }
+        
+        // Effacer avec BACKSPACE
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && nomBuffer.length() > 0) {
+            nomBuffer.deleteCharAt(nomBuffer.length() - 1);
         }
     }
 
@@ -334,6 +405,62 @@ public class Game extends ApplicationAdapter {
             titleFont.dispose();
             titleFont = null;
         }
+    }
+
+    // Implémentation des méthodes InputProcessor
+    @Override
+    public boolean keyDown(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+        // Cette méthode capture les caractères réels tapés selon la disposition du clavier
+        if (saisieNom && nomBuffer.length() < 15) {
+            if (Character.isLetterOrDigit(character) || character == ' ') {
+                if (character == ' ' && nomBuffer.length() == 0) {
+                    return false; // Pas d'espace au début
+                }
+                nomBuffer.append(character);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return false;
     }
 
 }
